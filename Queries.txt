@@ -1,0 +1,102 @@
+Query 1:
+/* We want to understand more about the movies that families are watching.
+The following categories are considered family movies: Animation, Children, Classics, Comedy, Family and Music*/
+/*What are the most successful categories among the family movies ? */
+/*Start of query*/
+SELECT DISTINCT(fi.title) film_title,
+ca.name category_name , 
+COUNT (re.rental_date)OVER(PARTITION BY fi.title ORDER BY fi.title) AS rental_count
+FROM film fi
+JOIN film_category fic
+ON fi.film_id = fic.film_id
+JOIN category ca
+ON fic.category_id = ca.category_id
+JOIN inventory inv
+ON fi.film_id = inv.film_id
+JOIN rental re
+ON inv.inventory_id = re.inventory_id
+/* WHERE function to check */
+WHERE ca.name = 'Animation'
+OR ca.name = 'Children'
+OR ca.name = 'Classics'
+OR ca.name = 'Comedy'
+OR ca.name = 'Family'
+OR ca.name = 'Music'
+ORDER BY ca.name , fi.title
+/* End of query */
+/************************************************************************************************************/
+Query 2:
+/*How is the distribution of family friendly films among the categories of films and rental duration?*/
+/*In this query we use subquery */
+/*Start of Query*/
+SELECT category_name, 
+standard_quartile,
+COUNT(*)
+FROM 
+(SELECT film_title,
+category_name,
+rental_duration,
+NTILE(4) OVER (ORDER BY rental_duration) AS standard_quartile
+FROM
+(SELECT fi.title film_title,
+ca.name category_name,
+fi.rental_duration rental_duration
+FROM film fi
+JOIN film_category fic
+ON fi.film_id = fic.film_id
+JOIN category ca
+ON fic.category_id = ca.category_id
+WHERE ca.name = 'Animation'
+OR ca.name = 'Children'
+OR ca.name = 'Classics'
+OR ca.name = 'Comedy'
+OR ca.name = 'Family'
+OR ca.name = 'Music') ta1
+ORDER BY rental_duration) ta2
+GROUP BY 1,2
+ORDER BY 1,2;
+/*End of Query*/
+/**************************************************************************************************/
+Query 3:
+/*How does the two stores compare in their count of rental orders ?*/
+/*Start of query*/
+SELECT DATE_PART('month',ren.rental_date)AS Rental_month,
+DATE_PART('year',ren.rental_date) AS Rental_year,
+st.store_id,COUNT(*) AS Count_rentals
+FROM rental ren
+JOIN payment pay
+ON ren.rental_id = pay.rental_id
+JOIN staff sta
+ON pay.staff_id = sta.staff_id
+JOIN store st
+ON sta.store_id = st.store_id
+GROUP BY rental_month, rental_year, st.store_id
+ORDER BY Count_rentals DESC;
+/*End of query*/
+/*************************************************************************************/
+Query 4:
+/*Who are the top 10 paying customers ? How many did each paid in total?*/
+/*Start of Query*/
+WITH ta1 AS (
+SELECT first_name||' '||last_name AS full_name,
+SUM(pay.amount) AS total_amount
+FROM customer cus
+JOIN payment pay
+ON cus.customer_id = pay.customer_id
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10)
+SELECT full_name,
+total_amount
+FROM ta1;
+/*End of Query*/
+
+
+
+
+
+
+ 
+
+
+
